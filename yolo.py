@@ -15,9 +15,9 @@ from utils.utils import letterbox_image
 
 class YOLO(object):
     _defaults = {
-        "model_path"        : 'logs_2/last1.h5',
-        "anchors_path"      : 'model_data/yolo_anchors.txt',
-        "classes_path"      : 'model_data/new_class.txt',
+        "model_path"        : 'output/loss1.951.h5',
+        "anchors_path"      : 'yolo_anchors.txt',
+        "classes_path"      : 'class.txt',
         "score"             : 0.5,
         "iou"               : 0.3,
         "eager"             : False,

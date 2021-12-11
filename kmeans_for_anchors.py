@@ -80,10 +80,10 @@ def load_data(path):
 if __name__ == '__main__':
     # 运行该程序会计算'./VOCdevkit/VOC2007/Annotations'的xml
     # 会生成yolo_anchors.txt
-    SIZE = 416
+    SIZE = 320
     anchors_num = 6
     # 载入数据集，可以使用VOC的xml
-    path = r'./VOCdevkit/VOC2007/Annotations'
+    path = './usb_label_xml'
     
     # 载入所有的xml
     # 存储格式为转化为比例后的width,height

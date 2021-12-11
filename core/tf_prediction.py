@@ -63,7 +63,6 @@ def pred_img(img_path, model_image_size):
     image = cv2.imread(img_path)
     image = image[...,::-1]
     image_h, image_w, _ = image.shape
-
     # image preprocessing
     if model_image_size != (None, None):
         assert model_image_size[0]%32 == 0, 'Multiples of 32 required'
@@ -106,8 +105,8 @@ if __name__ == "__main__":
     parser.add_argument('--result_file', type=str, help='path of voc prediction result')
     FLAGS = parser.parse_args()
 
-    classes_path = "model_data/voc_classes.txt"
-    anchors_path = "model_data/yolo_anchors.txt"
+    classes_path = "../class.txt"
+    anchors_path = "../yolo_anchors.txt"
     pb_file_path = FLAGS.pb_file
     score_thresh = 0.005
     nms_thresh = 0.45
@@ -124,8 +123,8 @@ if __name__ == "__main__":
     sess.run(tf.global_variables_initializer())
 
     input_x = sess.graph.get_tensor_by_name('input_1:0')
-    output_y1 = sess.graph.get_tensor_by_name('conv2d_17/BiasAdd:0')
-    output_y2 = sess.graph.get_tensor_by_name('conv2d_20/BiasAdd:0')
+    output_y1 = sess.graph.get_tensor_by_name('conv2d_20/BiasAdd:0')
+    output_y2 = sess.graph.get_tensor_by_name('conv2d_23/BiasAdd:0')
     #output_y3 = sess.graph.get_tensor_by_name('output:0')
     output_y = [output_y1, output_y2]
     input_image_shape = tf.placeholder(tf.int32, shape=(2))
@@ -139,7 +138,7 @@ if __name__ == "__main__":
         fname = os.path.split(img_path)[-1]
         image_id = os.path.splitext(fname)[0]
 
-        items = pred_img(img_path, (416, 416))
+        items = pred_img(img_path, (320, 320))
         write_items_to_file(image_id, items, fw)
 
     fw.close()

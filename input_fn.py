@@ -81,7 +81,7 @@ def letterbox_image(image, size):
 
 #image = Image.open(img_path)
 
-def preprocessing_fn(image, model_image_size=(416,416)):
+def preprocessing_fn(image, model_image_size=(320,320)):
     if model_image_size != (None, None):
         assert model_image_size[0]%32 == 0, 'Multiples of 32 required'
         assert model_image_size[1]%32 == 0, 'Multiples of 32 required'
@@ -93,9 +93,9 @@ def preprocessing_fn(image, model_image_size=(416,416)):
     image_data /= 255.
     return image_data
 
-calib_image_dir = "./images/"
-calib_image_list = "./list.txt"
-calib_batch_size = 1
+calib_image_dir = "/workspace/Ultra96-Yolov4-tiny-and-Yolo-Fastest/singal_usb_blackBG_noglue_211116/mix_all/"
+calib_image_list = "./clab_all_photo.txt"
+calib_batch_size = 3
 def calib_input(iter):
   images = []
   line = open(calib_image_list).readlines()

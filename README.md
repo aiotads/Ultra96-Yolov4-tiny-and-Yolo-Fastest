@@ -1,4 +1,73 @@
 # Ultra96 Yolov4-tiny and Yolo-Fastest
+
+### Requment
+ - Training framework: tensorflow v2.2.0rc4 (keras v2.3.0-tf)
+
+ - Transfer Xilinx model: vitis-ai tensorflow1
+
+### Training and transfor step by step
+
+1. Prepare your dataset for training and label them. 
+2. Use `txt2xml.py` to  transfer the dataset bounding box.txt to .xml. 
+3. Use  `paser_dataset.py` or `voc_annotation.py`  to integrate data path, bounding box from .xml and class together.
+   ```
+   # example: paser_data.txt
+   /path/picture1.png 40,192,257,420,0
+   /path/picture2.png 282,370,618,576,1
+   ```
+4. We use trnsorflow v2.2.0rc4 to training. Please fill in your training information in `train.py`.
+   ```
+    annotation_path = 'paser_data.txt'
+    classes_path = 'class.txt'
+    anchors_path = 'yolo_anchors.txt'
+    weights_path = 'last1.h5'
+      .
+      .
+      . 
+    log_dir = 'output/'
+    ``` 
+   you will get a model.json when you start training. You can print `model_body.summary()` to double check your training model. Like following shows.
+   
+   ```
+      _________________________________________________________________________________
+      Layer (type)                    Output Shape        Param #  Connected to
+      =================================================================================
+      input_1 (InputLayer)           [(None, 320, 320, 3) 0
+      _________________________________________________________________________________
+      zero_padding2d (ZeroPadding2D) (None, 321, 321, 3)  0        input_1[0][0]
+      _________________________________________________________________________________
+      conv2d (Conv2D)                (None, 160, 160, 32) 864      zero_padding2d[0][0]
+                                          
+   ```
+
+   Also, you can verify model with .h5 use `predict.py` before you transfer model to .pb
+
+5. Change to tensorflow1 after finish training. We will start to transfer model in tensorflow1.   
+6. Use `keras_to_tensorflowing.py` to transfer .h5 to .pb
+   ```
+      python keras_to_tensorflow.py --input_model=path.h5 --input_model_json=model_config.json --output_model=output.pb
+   ```
+   Also, you can verify model with .pb use `core/tf_predict.py` before you transer model to xmodel
+7. Use `script/2_vitisAI_tf_quantize.sh` to quantize model.
+   ```
+      vai_q_tensorflow quantize \
+      --input_frozen_graph ./output/output.pb \
+      --input_nodes input_1 \
+      --input_shapes ?,320,320,3 \
+      --output_nodes conv2d_20/BiasAdd,conv2d_23/BiasAdd \
+      --method 1 \
+      --input_fn input_fn.calib_input \
+      --gpu 0 \
+      --calib_iter 161 \
+   ```
+8. Use `script/3_vitisAI_tf_compile.sh` to compile model to xmodel.
+   ```
+      vai_c_tensorflow --arch ./kv260_arch.json  -f quantize_eval_model.pb --output_dir compile_result -n model_name --options "{'mode':'normal','save_kernel':'', 'input_shape':'1,320,320,3'}"
+   ```
+
+
+### Introduction from the author
+
 1. We convert dataset to VOC format. I use UA-DETRAC dataset, and we can use ./VOCdevkit/ files to convert dataset.
 
 2. In the official yolov4-tiny, there is a slice operation to realize  the CSPnet, but the quantitative tools don't support the operation, so I use a 1*1 convolution to replace it.

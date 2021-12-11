@@ -142,13 +142,13 @@ for gpu in gpus:
 #   https://www.bilibili.com/video/BV1zE411u7Vw
 #----------------------------------------------------#
 if __name__ == "__main__":
-    # 标签的位置
-    annotation_path = '2007_train.txt'
+    # .txt path(include data path, bounding box and class)
+    annotation_path = 'paser_data.txt'
     # 获取classes和anchor的位置
-    classes_path = 'model_data/new_class.txt'
-    anchors_path = 'model_data/yolo_anchors.txt'
+    classes_path = 'class.txt'
+    anchors_path = 'yolo_anchors.txt'
     # 预训练模型的位置
-    weights_path = 'logs_1/last1.h5'
+    weights_path = 'last1.h5'
     # 获得classes和anchor
     class_names = get_classes(classes_path)
     anchors = get_anchors(anchors_path)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     num_classes = len(class_names)
     num_anchors = len(anchors)
     # 训练后的模型保存的位置
-    log_dir = 'logs_2/'
+    log_dir = 'output/'
     #----------------------------------------------#
     #   输入的shape大小
     #   显存比较小可以使用416x416
@@ -164,14 +164,14 @@ if __name__ == "__main__":
     #----------------------------------------------#
     input_shape = (320,320)
     mosaic = False
-    Cosine_scheduler = False
+    Cosine_scheduler = True
     label_smoothing = 0
 
     # 清除session
     K.clear_session()
 
     # 输入的图像为
-    image_input = Input(shape=(None, None, 3))
+    image_input = Input(shape=(input_shape[0], input_shape[1], 3))
     h, w = input_shape
 
     # 创建yolo模型
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     model_body = yolo_body(image_input, num_anchors//2, num_classes)
     
     model_body.summary()
-
+    print(model_body.summary)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     json_config = model_body.to_json()
@@ -235,7 +235,7 @@ if __name__ == "__main__":
         Init_epoch = 0
         Freeze_epoch = 1
         # batch_size大小，每次喂入多少数据
-        batch_size = 16
+        batch_size = 10
         # 最大学习率
         learning_rate_base = 1e-3
         if Cosine_scheduler:
@@ -273,9 +273,9 @@ if __name__ == "__main__":
     # 解冻后训练
     if True:
         Freeze_epoch = 1
-        Epoch = 11
+        Epoch = 150
         # batch_size大小，每次喂入多少数据
-        batch_size = 16
+        batch_size = 10
 
         # 最大学习率
         learning_rate_base = 1e-4
@@ -306,7 +306,7 @@ if __name__ == "__main__":
                 validation_steps=max(1, num_val//batch_size),
                 epochs=Epoch,
                 initial_epoch=Freeze_epoch,
-                callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+                callbacks=[logging, checkpoint, reduce_lr])
         model.save_weights(log_dir + 'last1.h5')
         #json_config = model.to_json()
         #with open(log_dir + 'model_config.json', 'w') as json_file:
