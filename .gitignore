@@ -1,0 +1,5 @@
+output/*
+output2/*
+output_220216/*
+nets/__pycache__/*
+utils/__pycache__/*
