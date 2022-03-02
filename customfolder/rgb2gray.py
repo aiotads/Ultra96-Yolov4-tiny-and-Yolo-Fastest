@@ -1,6 +1,7 @@
 from PIL import Image
 import argparse
 import os
+import cv2
 
 # parse = argparse.ArgumentParser(discription="input RGB image dir, it will gen new image_dir and convert to gray")
 parse = argparse.ArgumentParser()
@@ -12,18 +13,23 @@ format = args.format
 
 full_path = args.image_dir
 file = os.listdir(args.image_dir)
+gen_folder = os.path.join(full_path, 'gray')
 
-if not os.path.exists(os.path.join(full_path, 'gray')):
-    os.mkdir(os.path.join(full_path, 'gray'))
+if not os.path.exists(gen_folder):
+    os.mkdir(gen_folder)
 else:
     print('gray folder is exist!\n')
     exit()
 
 for _file in file:
     if _file.endswith(f'{format}'):
-        img = Image.open(os.path.join(full_path, _file)).convert('L')
-        img.save(f'{full_path}/gray/{_file}')
+        image = cv2.imread(os.path.join(full_path, _file))
+        print(f'file name:\t{_file}')
+        print(f'shape:\t\t{image.shape}')
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        print(f'convert shape:\t{image.shape}')
+        cv2.imwrite(os.path.join(gen_folder, _file), image)
+        # img = Image.open(os.path.join(full_path, _file)).convert('L')
+        # img.save(os.path.join(gen_folder, _file))
 
-
-# img = Image.open('image.png').convert('L')
-# img.save('greyscale.png')
+print(f'Finish! Please check folder {gen_folder}')
