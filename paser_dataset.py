@@ -1,7 +1,11 @@
 import xml.etree.ElementTree as ET
 from os import getcwd
+import os
 
-classes = ["OK","NG"]
+_classes = os.path.join('customfolder', 'classes.txt')
+
+with open(_classes, 'r') as f:
+    classes = [_class for _class in f.read().splitlines()]
 
 def convert_annotation(image_id, list_file):
     in_file = open('{}.xml'.format(image_id.split('.png')[0]))
@@ -25,8 +29,8 @@ def convert_annotation(image_id, list_file):
 wd = getcwd()
 
 
-image_ids = open('/workspace/Ultra96-Yolov4-tiny-and-Yolo-Fastest/predict_all_photo_xml.txt').read().strip().split()
-list_file = open('paser_data.txt', 'w')
+image_ids = open(os.path.join('customfolder', 'train.txt')).read().strip().split()
+list_file = open(os.path.join('customfolder', 'parser_image_list.txt'), 'w')
 for image_id in image_ids:
     list_file.write(image_id)
     convert_annotation(image_id, list_file)

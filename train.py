@@ -143,12 +143,12 @@ for gpu in gpus:
 #----------------------------------------------------#
 if __name__ == "__main__":
     # .txt path(include data path, bounding box and class)
-    annotation_path = 'paser_data.txt'
+    annotation_path = 'customfolder/parser_image_list.txt'
     # 获取classes和anchor的位置
-    classes_path = 'class.txt'
-    anchors_path = 'yolo_anchors.txt'
+    classes_path = 'customfolder/classes.txt'
+    anchors_path = 'customfolder/yolo_anchors.txt'
     # 预训练模型的位置
-    weights_path = 'last1.h5'
+    weights_path = 'customfolder/last1.h5'
     # 获得classes和anchor
     class_names = get_classes(classes_path)
     anchors = get_anchors(anchors_path)
@@ -156,7 +156,8 @@ if __name__ == "__main__":
     num_classes = len(class_names)
     num_anchors = len(anchors)
     # 训练后的模型保存的位置
-    log_dir = 'output/'
+    # log_dir = 'customfolder/backup/'
+    log_dir = '/workspace2/wilson/output/'
     #----------------------------------------------#
     #   输入的shape大小
     #   显存比较小可以使用416x416
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     K.clear_session()
 
     # 输入的图像为
-    image_input = Input(shape=(input_shape[0], input_shape[1], 3))
+    image_input = Input(shape=(input_shape[0], input_shape[1], 1))
     h, w = input_shape
 
     # 创建yolo模型
@@ -273,7 +274,7 @@ if __name__ == "__main__":
     # 解冻后训练
     if True:
         Freeze_epoch = 1
-        Epoch = 150
+        Epoch = 3000
         # batch_size大小，每次喂入多少数据
         batch_size = 10
 

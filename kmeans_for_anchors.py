@@ -2,6 +2,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 import glob
 import random
+import os
 
 def cas_iou(box,cluster):
     x = np.minimum(cluster[:,0],box[0])
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     SIZE = 320
     anchors_num = 6
     # 载入数据集，可以使用VOC的xml
-    path = './usb_label_xml'
+    path = '/workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos'
     
     # 载入所有的xml
     # 存储格式为转化为比例后的width,height
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     print('acc:{:.2f}%'.format(avg_iou(data,out) * 100))
     print(out*SIZE)
     data = out*SIZE
-    f = open("yolo_anchors.txt", 'w')
+    f = open(os.path.join("customfolder", "yolo_anchors.txt"), 'w')
     row = np.shape(data)[0]
     for i in range(row):
         if i == 0:
