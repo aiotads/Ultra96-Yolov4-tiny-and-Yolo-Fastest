@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import glob
 import random
 import os
+import argparse
 
 def cas_iou(box,cluster):
     x = np.minimum(cluster[:,0],box[0])
@@ -81,10 +82,18 @@ def load_data(path):
 if __name__ == '__main__':
     # 运行该程序会计算'./VOCdevkit/VOC2007/Annotations'的xml
     # 会生成yolo_anchors.txt
-    SIZE = 320
-    anchors_num = 6
+
+    parse = argparse.ArgumentParser(description='please give size and anchors_num and image_path to gen anchors')
+    parse.add_argument('image_path', type=str)
+    parse.add_argument('-s', '--size', type=int)
+    parse.add_argument('-a', '--anchors_num', type=int)
+    args = parse.parse_args()
+
+    SIZE = args.size
+    anchors_num = args.anchors_num
     # 载入数据集，可以使用VOC的xml
-    path = '/workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos'
+    # path = '/workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos'
+    path = args.image_path
     
     # 载入所有的xml
     # 存储格式为转化为比例后的width,height

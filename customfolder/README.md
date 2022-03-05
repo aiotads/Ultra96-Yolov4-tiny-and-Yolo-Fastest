@@ -2,12 +2,16 @@
 - data prepare:
 - execute command:
 ```
+#please change current path to this repo folder Ultra96-Yolov4-tiny-and-Yolo-Fastest
+
 python txt2xml.py -img /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos -txt /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos -xml /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos
 
 python splitdata.py /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos -r 1
 
 python parser_dataset.py
-python kmeans_for_anchors.py
+python kmeans_for_anchors.py /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8_1200_1200_27fps_20220302/all_photos -s 320 -a 6
+
+# Not finish channel, size, and output path still need hard code in train.py
 python train.py
 
 ```
