@@ -12,7 +12,6 @@ python kmeans_for_anchors.py /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8
 ```
 # Start training
 ```
-python train.py -s 320 -o /workspace/wilson/
 python train.py -s 320 -o /workspace2/wilson/_Singel_USB_u3_keras-yolov4-tiny_p100_320_320_3_220307/
 ```
 TODO : channel add in args
@@ -20,5 +19,4 @@ TODO : channel add in args
 # txt2xml.py
 ```
 python txt2xml.py -img /workspace/wilson/dataset/full_tary_random_21_10_12/all_photos3 -txt /workspace/wilson/dataset/full_tary_random_21_10_12/all_photos3 -xml /workspace/wilson/dataset/full_tary_random_21_10_12/all_photos3
-
 ```
