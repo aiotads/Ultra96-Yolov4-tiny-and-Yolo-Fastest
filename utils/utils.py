@@ -246,7 +246,7 @@ def get_random_data(annotation_line, input_shape, max_boxes=100, jitter=.3, hue=
     x[:, :, 1:][x[:, :, 1:]>1] = 1
     x[x<0] = 0
     image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB) # numpy array, 0 to 1
-    image_data = cv2.cvtColor(image_data, cv2.COLOR_RGB2GRAY)
+    # image_data = cv2.cvtColor(image_data, cv2.COLOR_RGB2GRAY)
 
     # 将box进行调整
     box_data = np.zeros((max_boxes,5))

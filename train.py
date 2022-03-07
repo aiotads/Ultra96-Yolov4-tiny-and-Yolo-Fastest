@@ -11,6 +11,7 @@ from nets.yolo4_tiny import yolo_body
 from nets.loss import yolo_loss
 from utils.utils import get_random_data, get_random_data_with_Mosaic, rand, WarmUpCosineDecayScheduler, ModelCheckpoint
 import os
+import argparse
 
 
 #---------------------------------------------------#
@@ -142,6 +143,11 @@ for gpu in gpus:
 #   https://www.bilibili.com/video/BV1zE411u7Vw
 #----------------------------------------------------#
 if __name__ == "__main__":
+    parse = argparse.ArgumentParser(description='please give size and anchors_num and image_path to gen anchors')
+    parse.add_argument('-s', '--size', type=int)
+    parse.add_argument('-o', '--output_model', type=str)
+    args = parse.parse_args()
+
     # .txt path(include data path, bounding box and class)
     annotation_path = 'customfolder/parser_image_list.txt'
     # 获取classes和anchor的位置
@@ -157,13 +163,14 @@ if __name__ == "__main__":
     num_anchors = len(anchors)
     # 训练后的模型保存的位置
     # log_dir = 'customfolder/backup/'
-    log_dir = '/workspace2/wilson/output/'
+    log_dir = args.output_model
     #----------------------------------------------#
     #   输入的shape大小
     #   显存比较小可以使用416x416
     #   现存比较大可以使用608x608
     #----------------------------------------------#
-    input_shape = (320,320)
+    # input_shape = (320,320)
+    input_shape = (args.size,args.size)
     mosaic = False
     Cosine_scheduler = True
     label_smoothing = 0
@@ -172,7 +179,7 @@ if __name__ == "__main__":
     K.clear_session()
 
     # 输入的图像为
-    image_input = Input(shape=(input_shape[0], input_shape[1], 1))
+    image_input = Input(shape=(input_shape[0], input_shape[1], 3))
     h, w = input_shape
 
     # 创建yolo模型
@@ -184,7 +191,7 @@ if __name__ == "__main__":
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     json_config = model_body.to_json()
-    with open(log_dir + 'model_config.json', 'w') as json_file:
+    with open(os.path.join(log_dir, 'model_config.json'), 'w') as json_file:
         json_file.write(json_config)
     #-------------------------------------------#
     #   权值文件的下载请看README

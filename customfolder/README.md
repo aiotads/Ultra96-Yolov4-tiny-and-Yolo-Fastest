@@ -12,9 +12,10 @@ python kmeans_for_anchors.py /workspace/wilson/dataset/3_singleUSB_gray_G4_mono8
 ```
 # Start training
 ```
-python train.py
+python train.py -s 320 -o /workspace/wilson/
+python train.py -s 320 -o /workspace2/wilson/_Singel_USB_u3_keras-yolov4-tiny_p100_320_320_3_220307/
 ```
-TODO : channel, size, and output path add in args
+TODO : channel add in args
 
 # txt2xml.py
 ```
