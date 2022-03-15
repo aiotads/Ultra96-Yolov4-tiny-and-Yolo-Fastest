@@ -12,10 +12,11 @@ from tensorflow.keras.models import Model
 from PIL import Image, ImageFont, ImageDraw
 from nets.yolo4_tiny import yolo_body,yolo_eval
 from utils.utils import letterbox_image
+import time
 
 class YOLO(object):
     _defaults = {
-        "model_path"        : 'output/loss1.951.h5',
+        "model_path"        : 'output_models/320_320_3_grayUSB/ep150-loss2.349-val_loss3.099.h5',
         "anchors_path"      : 'yolo_anchors.txt',
         "classes_path"      : 'class.txt',
         "score"             : 0.5,
@@ -98,6 +99,7 @@ class YOLO(object):
 
         if self.eager:
             self.input_image_shape = Input([2,],batch_size=1)
+            print("input image:",self.input_image_shape)
             inputs = [*self.yolo_model.output, self.input_image_shape]
             outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
                 arguments={'anchors': self.anchors, 'num_classes': len(self.class_names), 'image_shape': self.model_image_size, 
@@ -139,15 +141,16 @@ class YOLO(object):
         
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         # 设置字体
-        font = ImageFont.truetype(font='font/simhei.ttf',
+        font = ImageFont.truetype(font='font/SimHei.ttf',
                     size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
 
+        items = []
         for i, c in list(enumerate(out_classes)):
             predicted_class = self.class_names[c]
             box = out_boxes[i]
             score = out_scores[i]
-
+            print(box)
             top, left, bottom, right = box
             top = top - 5
             left = left - 5
@@ -158,9 +161,13 @@ class YOLO(object):
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
 
+            item  = [predicted_class, score, left, top, right, bottom]
+            items.append(item)
+
 
             # 画框框
             label = '{} {:.2f}'.format(predicted_class, score)
+            image = image.convert("RGB")
             draw = ImageDraw.Draw(image)
             label_size = draw.textsize(label, font)
             label = label.encode('utf-8')
@@ -180,7 +187,11 @@ class YOLO(object):
                 fill=self.colors[c])
             draw.text(text_origin, str(label,'UTF-8'), fill=(0, 0, 0), font=font)
             del draw
-
+        
+        image.save("/workspace/00_hueiru/Ultra96-Yolov4-tiny-and-Yolo-Fastest_0308/core/pic/h5-predicted_class-{}.png".format(time.time()))
         end = timer()
         print(end - start)
-        return image
+
+        # if return items: use to save predict result. image:show predict
+        return items
+        # return image

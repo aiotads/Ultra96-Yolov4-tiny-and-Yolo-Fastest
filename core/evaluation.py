@@ -118,8 +118,13 @@ def compute_detection_ap(results, gts, thresh, overlap_thresh, use_07_metric=Fal
             print('wrong ground truth info: ' + gt_info[0])
             return 0
         image_name = gt_info[0]
-        class_name = gt_info[1]
-        bbox = [float(item) for item in gt_info[2:6]]
+        print(image_name)
+        # class_name = gt_info[1]
+        class_name = gt_info[5]
+        print(class_name)
+        # bbox = [float(item) for item in gt_info[2:6]]
+        bbox = [float(item) for item in gt_info[1:5]]
+        print(bbox)
         if len(gt_info) == 6:
             difficult = False
         else:

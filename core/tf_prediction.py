@@ -21,6 +21,7 @@ from PIL import Image
 from yolo3_predictor import yolo_predictor
 from tqdm import tqdm
 import argparse
+import time
 
 from tensorflow.contrib import decent_q
 
@@ -67,7 +68,8 @@ def pred_img(img_path, model_image_size):
     if model_image_size != (None, None):
         assert model_image_size[0]%32 == 0, 'Multiples of 32 required'
         assert model_image_size[1]%32 == 0, 'Multiples of 32 required'
-        boxed_image = letterbox_image(image, tuple(reversed(model_image_size)))
+        #boxed_image = letterbox_image(image, tuple(reversed(model_image_size)))
+        boxed_image = cv2.resize(image, model_image_size, interpolation=cv2.INTER_AREA)
     else:
         new_image_size = (image_w - (image_w % 32), image_h - (image_h % 32))
         boxed_image = letterbox_image(image, new_image_size)
@@ -87,6 +89,19 @@ def pred_img(img_path, model_image_size):
         score = out_scores[i]
 
         top, left, bottom, right = box
+        print(top, left, bottom, right)
+        print(image.shape)
+        x1y1 = (int(left), int(top))
+        x2y2 = (int(right), int(bottom))
+
+        image = cv2.rectangle(image, x1y1, x2y2, (0,0,0), 2)
+        image = cv2.putText(image, '{}'.format(class_names[c],), x1y1, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0,0,0), 2)        
+
+        cv2.imwrite("/workspace/00_hueiru/Ultra96-Yolov4-tiny-and-Yolo-Fastest_0308/core/pic/pb-predicted_class-{}.png".format(time.time()),_image)
+        # cv2.imshow("result", _image)
+        # cv2.waitKey(0)
+        # cv2.destroyWindow('result') 
+        
         top = max(0, np.floor(top + 0.5).astype('int32'))
         left = max(0, np.floor(left + 0.5).astype('int32'))
         bottom = min(image_h, np.floor(bottom + 0.5).astype('int32'))
