@@ -213,7 +213,7 @@ if __name__ == "__main__":
 
     # 训练参数设置
     logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
+    checkpoint = ModelCheckpoint(os.path.join(log_dir, 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5'),
         monitor='val_loss', save_weights_only=True, save_best_only=False, period=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
@@ -274,7 +274,7 @@ if __name__ == "__main__":
                 epochs=Freeze_epoch,
                 initial_epoch=Init_epoch,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-        model.save_weights(log_dir + 'trained_weights_stage_1.h5')
+        model.save_weights(os.path.join(log_dir, 'trained_weights_stage_1.h5'))
 
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
@@ -315,7 +315,7 @@ if __name__ == "__main__":
                 epochs=Epoch,
                 initial_epoch=Freeze_epoch,
                 callbacks=[logging, checkpoint, reduce_lr])
-        model.save_weights(log_dir + 'last1.h5')
+        model.save_weights(os.path.join(log_dir, 'last1.h5'))
         #json_config = model.to_json()
         #with open(log_dir + 'model_config.json', 'w') as json_file:
         #    json_file.write(json_config)
