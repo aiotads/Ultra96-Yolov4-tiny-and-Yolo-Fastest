@@ -146,6 +146,7 @@ if __name__ == "__main__":
     parse = argparse.ArgumentParser(description='please give size and anchors_num and image_path to gen anchors')
     parse.add_argument('-s', '--size', type=int)
     parse.add_argument('-o', '--output_model', type=str)
+    parse.add_argument('-pm', '--pretrain_model', type=str, default='customfolder/last1.h5')
     args = parse.parse_args()
 
     # .txt path(include data path, bounding box and class)
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     classes_path = 'customfolder/classes.txt'
     anchors_path = 'customfolder/yolo_anchors.txt'
     # 预训练模型的位置
-    weights_path = 'customfolder/last1.h5'
+    weights_path = args.pretrain_model
     # 获得classes和anchor
     class_names = get_classes(classes_path)
     anchors = get_anchors(anchors_path)
