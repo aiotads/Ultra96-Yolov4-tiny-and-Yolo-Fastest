@@ -9,9 +9,11 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import TensorBoard, ReduceLROnPlateau, EarlyStopping
 from nets.yolo4_tiny import yolo_body
 from nets.loss import yolo_loss
-from utils.utils import get_random_data, get_random_data_with_Mosaic, rand, WarmUpCosineDecayScheduler, ModelCheckpoint
+from utils.utils import get_normal_random_data, get_tfrec_random_data, get_random_data_with_Mosaic, rand, WarmUpCosineDecayScheduler, ModelCheckpoint
 import os
 import argparse
+from tfrec_reader import parser
+
 
 
 #---------------------------------------------------#
@@ -34,7 +36,7 @@ def get_anchors(anchors_path):
 #---------------------------------------------------#
 #   训练数据生成器
 #---------------------------------------------------#
-def data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes, mosaic=False):
+def normal_data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes, mosaic=False):
     '''data generator for fit_generator'''
     n = len(annotation_lines)
     i = 0
@@ -50,11 +52,11 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
                     image, box = get_random_data_with_Mosaic(annotation_lines[i:i+4], input_shape)
                     i = (i+4) % n
                 else:
-                    image, box = get_random_data(annotation_lines[i], input_shape)
+                    image, box = get_normal_random_data(annotation_lines[i], input_shape)
                     i = (i+1) % n
                 flag = bool(1-flag)
             else:
-                image, box = get_random_data(annotation_lines[i], input_shape)
+                image, box = get_normal_random_data(annotation_lines[i], input_shape)
                 i = (i+1) % n
             image_data.append(image)
             box_data.append(box)
@@ -63,6 +65,31 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
         yield [image_data, *y_true], np.zeros(batch_size)
 
+def tfrec_data_generator(dataset, batch_size, input_shape, anchors, num_classes, mosaic=False):
+    '''data generator for fit_generator'''
+    while True:
+        i = 1
+        image_data = []
+        box_data = []
+
+        for element in dataset.as_numpy_iterator():
+            image, box = get_tfrec_random_data(element[0], element[1], [320,320])
+            
+
+            image_data.append(image)
+            box_data.append(box)
+
+            if i%batch_size==0:
+                image_data = np.array(image_data)
+                box_data = np.array(box_data)
+
+                y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
+
+                yield [image_data, *y_true], np.zeros(batch_size)
+
+                image_data = []
+                box_data = []
+            i+=1
 
 #---------------------------------------------------#
 #   读入xml文件，并输出y_true
@@ -147,6 +174,7 @@ if __name__ == "__main__":
     parse.add_argument('-s', '--size', type=int)
     parse.add_argument('-o', '--output_model', type=str)
     parse.add_argument('-pm', '--pretrain_model', type=str, default='customfolder/last1.h5')
+    parse.add_argument('-ty', '--train_type', type=str, help='type: normal and tfrec')
     args = parse.parse_args()
 
     # .txt path(include data path, bounding box and class)
@@ -218,15 +246,31 @@ if __name__ == "__main__":
         monitor='val_loss', save_weights_only=True, save_best_only=False, period=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
-    # 0.1用于验证，0.9用于训练
-    val_split = 0.1
-    with open(annotation_path) as f:
-        lines = f.readlines()
-    np.random.seed(10101)
-    np.random.shuffle(lines)
-    np.random.seed(None)
-    num_val = int(len(lines)*val_split)
-    num_train = len(lines) - num_val
+    
+    if args.train_type == 'normal':
+        # 0.1用于验证，0.9用于训练
+        val_split = 0.1
+        with open(annotation_path) as f:
+            lines = f.readlines()
+        np.random.seed(10101)
+        np.random.shuffle(lines)
+        np.random.seed(None)
+        num_val = int(len(lines)*val_split)
+        num_train = len(lines) - num_val
+
+    elif args.train_type == 'tfrec':
+        train_tfrecord_files = tf.data.Dataset.list_files('customfolder/train_*.tfrecord')
+        train_dataset = tf.data.TFRecordDataset(train_tfrecord_files)
+        train_dataset = train_dataset.map(parser)
+        train_dataset = train_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+        val_tfrecord_files = tf.data.Dataset.list_files('customfolder/val_*.tfrecord')
+        val_dataset = tf.data.TFRecordDataset(val_tfrecord_files)
+        val_dataset = val_dataset.map(parser)
+        val_dataset = val_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+        
+        num_val = len(list(val_dataset.as_numpy_iterator()))
+        num_train = len(list(train_dataset.as_numpy_iterator()))
     
     freeze_layers = 60
     for i in range(freeze_layers): model_body.layers[i].trainable = False
@@ -268,9 +312,18 @@ if __name__ == "__main__":
             model.compile(optimizer=Adam(learning_rate_base), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-        model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
+        if args.train_type == 'normal':
+            model.fit(normal_data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
+                    steps_per_epoch=max(1, num_train//batch_size),
+                    validation_data=normal_data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False),
+                    validation_steps=max(1, num_val//batch_size),
+                    epochs=Freeze_epoch,
+                    initial_epoch=Init_epoch,
+                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+        elif args.train_type == 'tfrec':
+            model.fit(tfrec_data_generator(train_dataset, batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
                 steps_per_epoch=max(1, num_train//batch_size),
-                validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False),
+                validation_data=tfrec_data_generator(train_dataset, batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
                 validation_steps=max(1, num_val//batch_size),
                 epochs=Freeze_epoch,
                 initial_epoch=Init_epoch,
@@ -309,13 +362,24 @@ if __name__ == "__main__":
             model.compile(optimizer=Adam(learning_rate_base), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-        model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
-                steps_per_epoch=max(1, num_train//batch_size),
-                validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False),
-                validation_steps=max(1, num_val//batch_size),
-                epochs=Epoch,
-                initial_epoch=Freeze_epoch,
-                callbacks=[logging, checkpoint, reduce_lr])
+        
+        if args.train_type == 'normal':
+            model.fit(normal_data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
+                    steps_per_epoch=max(1, num_train//batch_size),
+                    validation_data=normal_data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False),
+                    validation_steps=max(1, num_val//batch_size),
+                    epochs=Epoch,
+                    initial_epoch=Freeze_epoch,
+                    callbacks=[logging, checkpoint, reduce_lr])
+        
+        elif args.train_type == 'tfrec':
+            model.fit(tfrec_data_generator(train_dataset, batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
+                    steps_per_epoch=max(1, num_train//batch_size),
+                    validation_data=tfrec_data_generator(train_dataset, batch_size, input_shape, anchors, num_classes, mosaic=mosaic),
+                    validation_steps=max(1, num_val//batch_size),
+                    epochs=Epoch,
+                    initial_epoch=Freeze_epoch,
+                    callbacks=[logging, checkpoint, reduce_lr])
         model.save_weights(os.path.join(log_dir, 'last1.h5'))
         #json_config = model.to_json()
         #with open(log_dir + 'model_config.json', 'w') as json_file:
