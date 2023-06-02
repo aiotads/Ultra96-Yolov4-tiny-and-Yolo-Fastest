@@ -13,6 +13,14 @@ python parser_dataset.py
 python kmeans_for_anchors.py $IMAGE_SOURCE -s 320 -a 6
 ```
 # Start training
+Usge
+
 ```
-python train.py -s 320 -o /workspace2/wilson/_Singel_USB_u3_keras-yolov4-tiny_p100_320_320_3_220307/
+python train.py -s <input size> -o <save weight dir> -ty <training mode>
+```
+
+Example
+
+```
+python train.py -s 320 -o /workspace2/wilson/_Singel_USB_u3_keras-yolov4-tiny_p100_320_320_3_220307/ -ty tfrec
 ```
