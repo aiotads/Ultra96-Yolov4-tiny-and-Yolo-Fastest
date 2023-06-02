@@ -66,6 +66,7 @@ def normal_data_generator(annotation_lines, batch_size, input_shape, anchors, nu
         yield [image_data, *y_true], np.zeros(batch_size)
 
 def tfrec_data_generator(dataset, batch_size, input_shape, anchors, num_classes, mosaic=False):
+    height, width = input_shape
     '''data generator for fit_generator'''
     while True:
         i = 1
@@ -73,18 +74,15 @@ def tfrec_data_generator(dataset, batch_size, input_shape, anchors, num_classes,
         box_data = []
 
         for element in dataset.as_numpy_iterator():
-            image, box = get_tfrec_random_data(element[0], element[1], [320,320])
-            
-
+            image, box = get_tfrec_random_data(element[0], element[1], [height, width])
             image_data.append(image)
             box_data.append(box)
 
             if i%batch_size==0:
                 image_data = np.array(image_data)
-                box_data = np.array(box_data)
+                box_data = np.array(box_data) 
 
                 y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
-
                 yield [image_data, *y_true], np.zeros(batch_size)
 
                 image_data = []
@@ -271,6 +269,8 @@ if __name__ == "__main__":
         
         num_val = len(list(val_dataset.as_numpy_iterator()))
         num_train = len(list(train_dataset.as_numpy_iterator()))
+    else:
+        print("please set the training type (-ty): normal or tfrec")
     
     freeze_layers = 60
     for i in range(freeze_layers): model_body.layers[i].trainable = False

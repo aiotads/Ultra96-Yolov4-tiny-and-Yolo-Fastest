@@ -268,10 +268,10 @@ def get_normal_random_data(annotation_line, input_shape, max_boxes=100, jitter=.
 
 def get_tfrec_random_data(image, _box,input_shape, max_boxes=100, jitter=.3, hue=.1, sat=1.5, val=1.5):
     '''random preprocessing for real-time data augmentation'''
-    image = Image.fromarray((image * 255).astype(np.uint8))
+    image = Image.fromarray((image))
     iw, ih = image.size
     h, w = input_shape
-    
+
     _box = _box.reshape(int(_box.size/5), 5) 
     box = np.copy(_box)
 
